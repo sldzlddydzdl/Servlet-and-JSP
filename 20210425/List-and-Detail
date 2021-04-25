@@ -1,0 +1,450 @@
+<%@page import="java.sql.ResultSet"%> // 클래스에 빨간줄이있으면 Ctrl + Space bar를
+<%@page import="java.sql.Statement"%> // 누르면 자동으로 import 된다.
+<%@page import="java.sql.DriverManager"%>
+<%@page import="java.sql.Connection"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>		// jsp첫시작하면 생기는 코드
+
+--------------- Oracle 데이터 베이스를 연동하기위한 기본세팅
+<% 
+String url = "jdbc:oracle:thin:@localhost:1521/xepdb1";
+String sql = "SELECT * FROM NOTICE";
+
+Class.forName("oracle.jdbc.driver.OracleDriver");
+Connection con = DriverManager.getConnection(url,"NEWLEC","0297");
+Statement st = con.createStatement();
+ResultSet rs = st.executeQuery(sql);
+
+%>
+---------------
+
+
+------------------------- rs.getInt(), rs.getString() , rs.getDate() 로  
+------------------------- 데이터 베이스에있는 데이터들 불러오기 
+--- 쿼리문이 다음과같다. String sql = "SELECT * FROM NOTICE";
+
+<tbody>
+<%
+	while(rs.next()){ 
+%>
+	<tr> <!--  tr 은 표에서 row(가로로한줄) 을 표시하는것 -->
+		<td><%=rs.getInt("ID") %></td>
+		<td class="title indent text-align-left"><a href="detail.html"><%=rs.getString("TITLE") %></a></td>
+		<td><%=rs.getString("WRITER_ID") %></td>
+		<td>
+			<%=rs.getDate("REGDATE") %>
+		</td>
+		<td><%=rs.getInt("HIT") %></td>
+	</tr>
+	<% } %>
+					
+</tbody>
+
+--------------------------------- detail.jsp -----------------------------------------
+
+		( 위의 list.jsp 를 살짝 수정 ) 
+		( a href = "detail.jsp?id=<%=rs.getInd("ID") %> ) 로 
+		( detai.jsp 에 id 값을 넘겨줌 ) !!!!!
+<tbody>
+<%
+	while(rs.next()){ 
+%>
+<tr> <!--  tr 은 표에서 row(가로로한줄) 을 표시하는것 -->
+	<td><%=rs.getInt("ID") %></td>
+	<td class="title indent text-align-left"><a href="detail.jsp?id=<%=rs.getInt("ID") %>"><%=rs.getString("TITLE") %></a></td>
+	<td><%=rs.getString("WRITER_ID") %></td>
+	<td>
+		<%=rs.getDate("REGDATE") %>
+	</td>
+	<td><%=rs.getInt("HIT") %></td>
+</tr>
+<% } %>
+
+</tbody>
+
+
+<%@page import="java.sql.PreparedStatement"%> // import
+<%@page import="java.sql.ResultSet"%>
+<%@page import="java.sql.Statement"%>
+<%@page import="java.sql.DriverManager"%>
+<%@page import="java.sql.Connection"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+
+<%
+
+int id = Integer.parseInt(request.getParameter("id")); 
+// list.jsp 에서 넘겨받은 id 값을 사용해서 DB 쿼리문에 사용함
+
+String url = "jdbc:oracle:thin:@localhost:1521/xepdb1";
+String sql = "SELECT * FROM NOTICE WHERE ID=?"; // ID 가 몇인애들의 NOTICE정보를 다 뽑아내라
+						// 여기서 ? 는 자바에서 오라클 
+						// DB연동해서 가져오기위한 ? 이다.
+
+Class.forName("oracle.jdbc.driver.OracleDriver");
+Connection con = DriverManager.getConnection(url,"NEWLEC","0297");
+PreparedStatement st = con.prepareStatement(sql); // ? 형식으로 DB를 연동할때는
+						  // PreparedStatement를 쓰고
+						  // sql을 받도록한다.
+st.setInt(1, id); // SQL문 ? 에 ID 값을 넣어라
+
+ResultSet rs = st.executeQuery();
+
+rs.next(); // 서버에서 다음 레코드를 가져오세요
+
+%>
+
+<!DOCTYPE html>
+<html>
+
+<tbody>
+	<tr>
+		<th>제목</th>
+		<td class="text-align-left text-indent text-strong text-orange" colspan="3"><%= rs.getString("TITLE") %></td>
+	</tr>
+	<tr>
+		<th>작성일</th>
+		<td class="text-align-left text-indent" colspan="3"><%=rs.getDate("REGDATE") %>	</td>
+	</tr>
+	<tr>
+		<th>작성자</th>
+		<td><%= rs.getString("WRITER_ID") %></td>
+		<th>조회수</th>
+		<td><%= rs.getInt("HIT") %></td>
+	</tr>
+	<tr>
+		<th>첨부파일</th>
+		<td colspan="3"><%= rs.getString("FILES") %></td>
+	</tr>
+	<tr class="content">
+		<td colspan="4"><%= rs.getString("CONTENT") %></td>
+	</tr>
+
+	<div class="margin-top text-align-center">
+		<a class="btn btn-list" href="list.jspl">목록</a> // 목록 을 누르면 다시
+								  // list.jsp로 가게한다.
+	</div>
+</tbody>
+</html>
+
+
+    <%
+    rs.close();
+    st.close();
+    con.close();
+    %>
+
+------------------------------------------- MVC MODEL1 방식 --------------------------
+
+@@@@@@@@@@@@@@@@@@@@@@ CONTROL @@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+<%@page import="java.util.Date"%>
+<%@page import="java.sql.PreparedStatement"%>
+<%@page import="java.sql.ResultSet"%>
+<%@page import="java.sql.Statement"%>
+<%@page import="java.sql.DriverManager"%>
+<%@page import="java.sql.Connection"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+
+<%
+int id = Integer.parseInt(request.getParameter("id"));
+
+String url = "jdbc:oracle:thin:@localhost:1521/xepdb1";
+String sql = "SELECT * FROM NOTICE WHERE ID=?";
+
+Class.forName("oracle.jdbc.driver.OracleDriver");
+Connection con = DriverManager.getConnection(url,"NEWLEC","0297");
+PreparedStatement st = con.prepareStatement(sql);
+st.setInt(1, id);
+
+ResultSet rs = st.executeQuery();
+
+rs.next(); // 서버에서 다음 레코드를 가져오세요
+
+String title = rs.getString("TITLE"); 
+Date regdate = rs.getDate("REGDATE"); 
+String writerId = rs.getString("WRITER_ID"); 
+String hit = rs.getString("HIT"); 
+String files = rs.getString("FILES"); 
+String content = rs.getString("CONTENT"); 
+
+rs.close();
+st.close();
+con.close();
+%>
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ VIEW @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+<tbody>
+	<tr>
+		<th>제목</th>
+		<td class="text-align-left text-indent text-strong text-orange" colspan="3"><%= title %></td>
+	</tr>
+	<tr>
+		<th>작성일</th>
+		<td class="text-align-left text-indent" colspan="3"><%= regdate %>	</td>
+	</tr>
+	<tr>
+		<th>작성자</th>
+		<td><%= writerId %></td>
+		<th>조회수</th>
+		<td><%= hit %></td>
+	</tr>
+	<tr>
+		<th>첨부파일</th>
+		<td colspan="3"><%=files %></td>
+	</tr>
+	<tr class="content">
+		<td colspan="4"><%=content %></td>
+	</tr>
+</tbody>
+
+
+
+---------------------------------- MVC MODEL 방식2 --------------------------------------
+
+
+DB < --- > @@@@@@@@@@@@@@@@@@ CONTROL @@@@@@@@@@@@@@@@@@@@ --> Servlet
+
+package com.newlecture.web.controller;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Date;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+@WebServlet("/notice/detail") // java코드가 먼저실행되어야하므로 detail.jsp는 먼저 실행되면안된다.	
+							  // 따라서 "/notice/detail"주소를 통해서 detail.jsp가 실행되는거다. 
+							  // NoticeDetailController.java 만실행하면 하얀 백지가 나올 것이다.
+							  // 무조건 NoticeDetailController.java를 실행해서 출력 데이터를 마련하면
+							  // NoticeDetailController.java에 의해서 detail.jsp가 호출되게끔해야한다!!!!!
+public class NoticeDetailController extends HttpServlet{
+	@Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		int id = Integer.parseInt(request.getParameter("id"));
+
+		String url = "jdbc:oracle:thin:@localhost:1521/xepdb1";
+		String sql = "SELECT * FROM NOTICE WHERE ID=?";
+
+		try {
+			
+			Class.forName("oracle.jdbc.driver.OracleDriver");
+			Connection con = DriverManager.getConnection(url,"NEWLEC","0297");
+			PreparedStatement st = con.prepareStatement(sql);
+			st.setInt(1, id);
+
+			ResultSet rs = st.executeQuery();
+
+			rs.next(); // 서버에서 다음 레코드를 가져오세요
+
+			String title = rs.getString("TITLE"); 
+			Date regdate = rs.getDate("REGDATE"); 
+			String writerId = rs.getString("WRITER_ID"); 
+			String hit = rs.getString("HIT"); 
+			String files = rs.getString("FILES"); 
+			String content = rs.getString("CONTENT"); 
+
+			// forward 하기전에 request 로 데이터 저장
+			request.setAttribute("title", title);
+			request.setAttribute("regdate", regdate);
+			request.setAttribute("writerId", writerId);
+			request.setAttribute("hit", hit);
+			request.setAttribute("files", files);
+			request.setAttribute("content", content);
+			
+			rs.close();
+			st.close();
+			con.close();
+			
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		// redirect // 만약 로그인이안됫다 로그인을해라 로그인페이지로보내기
+					// 또 만약 게시글을 써서 목록으로자동으로 보내야할때 
+					// 이러한 경우에 redirect를 사용한다.
+		
+		
+		
+		// forward  // NoticeDetailController.java 작업해던거를 이어받아서 detail.jsp 
+					// 가 처리하고싶을때 그때 사용되는 전이방식이 forward이다. 
+		
+		request.getRequestDispatcher("/notice/detail.jsp").forward(request, response);
+															// forward 하게되면 detail.jsp 와같이 쓰게되는거다.
+		
+	}
+}
+
+
+@@@@@@@@@@@@@@@@@@ MODE @@@@@@@@@@@@@@@@@ MODE 가 Servlet에 상태저장방법이 필요
+		방법은 : pageContext / request / session / application 객체
+		request 는 언래 입력도구인데 저장하는 기능도있다.
+		이저장한것을 이제 view에 전달해야함 이 중간단계를 MODE라함.
+
+
+
+
+@@@@@@@@@@@@@@@@@ VIEW @@@@@@@@@@@@@@@@ --> JSP 
+
+<tbody>
+	<tr>
+		<th>제목</th>
+		<td class="text-align-left text-indent text-strong text-orange" colspan="3"><%=request.getAttribute("title") %></td>
+	</tr>
+	<tr>
+		<th>작성일</th>
+		<td class="text-align-left text-indent" colspan="3"><%=request.getAttribute("regdate")%>	</td>
+	</tr>
+	<tr>
+		<th>작성자</th>
+		<td><%= request.getAttribute("writerId") %></td>
+		<th>조회수</th>
+		<td><%= request.getAttribute("hit") %></td>
+	</tr>
+	<tr>
+		<th>첨부파일</th>
+		<td colspan="3"><%= request.getAttribute("files") %></td>
+	</tr>
+	<tr class="content">
+		<td colspan="4"><%= request.getAttribute("content") %></td>
+	</tr>
+</tbody>
+	</table>
+</div>
+
+<div class="margin-top text-align-center">
+	<a class="btn btn-list" href="list.jsp">목록</a>
+</div>
+
+@@@@@@@@@@@@@ list.jsp @@@@@@@@@@@@@@@@@@
+
+<%
+	while(rs.next()){ 
+%>
+<tr> <!--  tr 은 표에서 row(가로로한줄) 을 표시하는것 -->
+	<td><%=rs.getInt("ID") %></td>
+	<td class="title indent text-align-left"><a href="detail?id=<%=rs.getInt("ID") %>"><%=rs.getString("TITLE") %></a></td>
+	<td><%=rs.getString("WRITER_ID") %></td>
+	<td>
+		<%=rs.getDate("REGDATE") %>
+	</td>
+	<td><%=rs.getInt("HIT") %></td>
+</tr>
+<% } %>
+
+detail.jsp?id =   ---> detail?id 로 바꿔줘야한다. 이제 
+
+NoticeDetailController.java 에 전해줘야하기때문에 
+@WebServlet("/notice/detail") 이주소에 맞게 보내줘야한다. 
+( 이미 root/notice/ 상태이므로 detail만 넣어주면된다. ) 
+
+------------------------------- list.jsp 도 MVC MODEL2 로 바꾸기 ------------------------
+
+@@@@@@@@@@@@@@@@@@@@@@@@ Controller 
+
+package com.newlecture.web.controller;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import com.newlecture.web.entity.Notice;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+@WebServlet("/notice/list")
+public class NoticeListController extends HttpServlet{
+	@Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		List<Notice> list = new ArrayList<>();
+		
+		String url = "jdbc:oracle:thin:@localhost:1521/xepdb1";
+		String sql = "SELECT * FROM NOTICE";
+
+		try {
+			Class.forName("oracle.jdbc.driver.OracleDriver");
+			Connection con = DriverManager.getConnection(url,"NEWLEC","0297");
+			Statement st = con.createStatement();
+			ResultSet rs = st.executeQuery(sql);
+
+			while(rs.next()){ 
+				int id = rs.getInt("id");
+				String title = rs.getString("TITLE"); 
+				Date regdate = rs.getDate("REGDATE"); 
+				String writerId = rs.getString("WRITER_ID"); 
+				String hit = rs.getString("HIT"); 
+				String files = rs.getString("FILES"); 
+				String content = rs.getString("CONTENT"); 
+				
+				Notice notice = new Notice(id, title, regdate, writerId, hit, files, content);
+				
+				list.add(notice);
+			} 
+
+			rs.close();
+			st.close();
+			con.close();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		request.setAttribute("list", list);
+		
+		request.getRequestDispatcher("/notice/list.jsp").forward(request, response);
+		
+	}
+}
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@ View 
+
+<%
+List<Notice> list = (List<Notice>)request.getAttribute("list");
+for(Notice n : list) { 
+	pageContext.setAttribute("n", n);
+%>
+
+<tr> <!--  tr 은 표에서 row(가로로한줄) 을 표시하는것 -->
+	<td>${n.id}</td>
+	<td class="title indent text-align-left"><a href="detail?id=${id}"></a>${n.title}</td>
+	<td>${n.writerId}</td>
+	<td>${n.regdate}</td>
+	<td>${n.hit}</td>
+</tr>
+<% } %>
+			
+
+------------------------------------ View 단을 은닉화하기 ---------------------------
+
+/WEB-INF 에 view라는파일 만들어서 admin, member, notice, student 파일을 넣어준다.
+
+WEB-INF 는 웹서버에서 호출할수없는 디렉토리이므로 사용자가 호출할수 없게된다.
