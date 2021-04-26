@@ -1,0 +1,260 @@
+
+View 에서 사용하는 제어구조
+
+자바의 반복문을 이용한 제어구조에서 태그를 이용한 제어구조로 바꾸기
+
+<% for (Notice n : list ) { %>    -----> <forEach> </forEach>  
+
+tomcat 10 버젼에서 jstl 을 쓰려면 
+
+https://stackoverflow.com/questions/4928271/how-to-install-jstl-the-absolute-uri-http-java-sun-com-jstl-core-cannot-be-r
+위의 사이트 에가서
+
+jakarta.servlet.jsp.jstl-2.0.0.jar ( 나는 이거먼저 받고 안되서 아래것을 받음 ) 
+jakarta.servlet.jsp.jstl-api-2.0.0.jar 파일을 받아서 WEB-INF/lib 에 넣으면
+ClassnotFoundException을 막을수 있다.
+
+<%@ taglib prefix="c" uri = "http://java.sun.com/jsp/jstl/core"%>
+다음 list.jsp 에 맨위에 위와같이 한줄 써준다.
+
+<c:forEach var="n" items="${list}">
+<tr> <!--  tr 은 표에서 row(가로로한줄) 을 표시하는것 -->
+	<td>${n.id}</td>
+	<td class="title indent text-align-left"><a href="detail?id=${n.id}">${n.title}</a></td>
+	<td>${n.writerId}</td>
+	<td>${n.regdate}</td>
+	<td>${n.hit}</td>
+</tr>
+</c:forEach>
+
+---------------------------------------------- JSTL ---------------------------------------
+
+JSTL
+( JSP Standard Tag Library )
+
+Core
+Formating
+Functions
+SQL --> 안쓴다
+XML --> 안쓴다
+
+<%@ taglib prefix="c" uri = "http://java.sun.com/jsp/jstl/core"%>
+
+접두사 c 를통해서 forEach를 쓸수있다.
+--> Jasper 에게 서버에서 처리할 taglib 임을 알 수 있게 함
+
+가장 간단한 for 태그 라이브러리 만들기 위한 두 가지 코드
+
+http://java.sun.com/jsp/jstl/core 식별자를 얼래 forEach 앞에 써야하는데
+너무길어서 prefix = "c" 로 c로 대신해서 쓴다. 
+
+서블릿이란 자바 웹 프로그래밍이다 ,좀더 자세하게 말하면 자바 웹서버 프로그래밍이다.
+
+웹이라는것은 입력 과 출력을 담당하는것이다
+
+java를가지고 console 프로그램은 콘솔에입출력 하는거고
+
+웹은 웹으로 입출력하는것이다. 
+
+java 는 system.in 과 system.out 으로 입출력하면되는데
+
+웹은 Servlet 코드가 제공하고있는 request 와 response를 가지고 
+입력과 출력을 할수있어던 것이었다.
+
+request ; 입력 설정, 입력값 읽기
+
+response : 출력 설정 , 출력 스트림 --> 웹문서 출력 --> (웹문서 출력을 도와주는)
+
+--> 문서 기반(jsp) 의 코드블록
+
+코드블록 --> 스파게티 형식의 코드블록을 개선하고자 해서 나온게
+
+--> MVC 가 나왔다 --> View 에서 코드블록이 꼭 필요한 경우 
+
+--> EL, JSTL 을 쓰면된다.
+
+---------------------- JSTL forEach 속성 알아보기 ---------------------------------
+
+NotePubs
+www.notepubs.com
+
+<forEach var = "n" items = "${list}" varStatus = "st">
+
+${st.current}: 반복할때 사용되고 있는 객체 (현재 list)
+${st.index} : 0번째 1번째 index번째
+${st.count} : 반복되는 횟수 출력
+${st.first} : 현재 반복되는게 첫번째면 true 값 반환
+${st.last} : 반복할때 마지막값이면 true 값반환
+${st.begin} : 반복할때 시작값 설정할수 있음
+${st.end} : 반복할때 끝값 설정할수 있음
+${st.step} : index가 하나씩증가하게 되있는데 step에 2를 넣으면
+             index가 2씩증가한다.
+
+========= JSTL 로 Pager 번호 만들기
+
+</div>
+	<c:set var="page" value="${(param.p == null)?1:param.p}" />
+	<c:set var="startNum" value = "${page-(page-1)%5}" />
+
+	<ul class="-list- center">
+		<c:forEach var="i" begin="0" end = "4">
+		<li><a class="-text- orange bold" href="?p=${startNum+i}&t=&q=" >${startNum+i}</a></li>
+		</c:forEach>
+	</ul>
+<div>
+
+<c:set var = "page" value = "${(param.p == null)?1:param.p}: />
+--> set을 이용해서 page라는 변수를 선언
+--> page라는 변수의 값에는 param.p(웹에서 값을받은 값) == null 이면 1을 띄우고
+--> 아니면 param.p 의 값을 넣어라 
+
+<c:set var = "startNum" value = "${page-(page-1)%5} />
+--> set을 이용해서 startNum이라는 변수를 선언
+--> startNum에 값에는 page-(page-1)%5의 값을 넣는다.
+--> ex) page 가 28이면 startNum = 26이 된다. [ 28 - 27%5 ] = 26
+
+<c: forEach var = "i" begin = "0" end = "4">
+<li><a class = "-text- orange bold" href = "?p=${startNum+i}&t=&q=" >${startNum+i}</a></li>
+</c:forEach>
+
+--> forEach 문을 돌릴건데 변수는 i로해서 i 값은 0부터 시작해서 4까지 반복한다 1씩증가해서
+--> ?p 값에 만약 위와같이 page가 28이면 startNum= 26이므로 26+0, 26+1 ... 26 + 4까지 
+--> 웹에 출력한다. 하이퍼링크와 함께
+
+------------------------- JSTL : if문으로 Pager 이전/다음 번호만들기
+
+	<div>
+	
+		<c:set var="page" value="${(param.p == null)?1:param.p}" />
+		<c:set var="startNum" value="${page-(page-1)%5}" />
+		<c:set var="lastNum" value="23" />
+		
+		<c:if test="${startNum>1}">
+		<a class="btn btn-prev" href="?p=${startNum-1}&t=&q=" >이전</a>
+		</c:if>
+		<c:if test="${startNum<=1}">
+		<span class="btn btn-prev" onclick="alert('이전 페이지가 없습니다.');">이전</span>
+		</c:if>
+		
+	</div>
+
+	<ul class="-list- center">
+		<c:forEach var="i" begin="0" end = "4">
+		<li><a class="-text- orange bold" href="?p=${startNum+i}&t=&q=" >${startNum+i}</a></li>
+		</c:forEach>
+	</ul>
+	<div>
+			<!--  다음태크로 가기위한 a 태그로 바꾸기 -->
+			<c:if test="${startNum+5<lastNum}">
+				<a href="?p=${startNum+5}&t=&q=" class="btn btn-next">다음</a>
+			</c:if>
+			<c:if test="${startNum+5>=lastNum}">
+			<span class="btn btn-next" onclick="alert('다음 페이지가 없습니다.');">다음</span>
+			</c:if>
+	</div>
+	
+------------------------------------ 이전 /다음 완벽구현-----------------
+
+
+		<c:set var="page" value="${(param.p == null)?1:param.p}" />
+		<c:set var="startNum" value="${page-(page-1)%5}" />
+		<c:set var="lastNum" value="23" />
+		--> <c: set 애들을 이전페이지 구현하는 것보다 위에둬야
+		--> 이전페이지애들도 <c:set 의 변수들의 값을 사용할수 있다.
+
+		<c:if test="${startNum>1}"> 
+		--> 만약 startNum 이 1보다 큰 상태에서 
+		<a class="btn btn-prev" href="?p=${startNum-1}&t=&q=" >이전</a>
+		--> 이전버튼을 누르면 startNum-1값을 링크를 통해전달해줘라
+		</c:if>
+		<c:if test="${startNum<=1}">
+		--> 만약 startNum 이 1 보다 작거나 같은 상태에서
+		<span class="btn btn-prev" onclick="alert('이전 페이지가 없습니다.');">이전</span>
+		--> 이전버튼을 누르면 이전페이지가 없다는 알람표시를 나타내라.
+		</c:if>
+		
+	</div>
+
+	<ul class="-list- center">
+		<c:forEach var="i" begin="0" end = "4">
+		<li><a class="-text- orange bold" href="?p=${startNum+i}&t=&q=" >${startNum+i}</a></li>
+		</c:forEach>
+	</ul>
+	<div>
+			<!--  다음태크로 가기위한 a 태그로 바꾸기 -->
+			<c:if test="${startNum+5<lastNum}">
+				<a href="?p=${startNum+5}&t=&q=" class="btn btn-next">다음</a>
+			</c:if>
+			<c:if test="${startNum+5>=lastNum}">
+			<span class="btn btn-next" onclick="alert('다음 페이지가 없습니다.');">다음</span>
+			</c:if>
+	</div>
+
+--------------------- JSTL : format 태그로 날짜 형식 변경하
+
+<tr>
+	<th>첨부파일</th>
+	<td colspan="3" style="text-align:left;text-indent:20px">  --> 꾸며주기
+	<c:forTokens var="fileName" items="${n.files}" delims="," varStatus="st">
+	--> forTokens 라는 것은 delims 는 그값에 따라 짤라주는역할을 한다
+	--> 따라서 지금은 delims=","이므로 ,에 따라 문자열을 짤라준다.
+	--> items=${n.files}를 넣었으니 데이터베이스에서 files의 문자열을
+	--> 가져와서 , 따라 짤라준다. 그다음 그 값을 하나씩 var="fileName"
+	--> fileName 이라는 변수에 넣어준다.
+
+		<a href="${fileName}">${fileName}</a>
+		--> 하이퍼링크로 이동주소를 써주고,(지금은 파일명) ,그에대한 파일이름
+		--> 들을 출력한다. 하나출력하면 그다음에 / 가 나오게해서 구분해준다.
+		<c:if test="${!st.last}">
+		/
+		</c:if>
+		--> varStatus = "st"를 통해서 st.last는 forTokens에서의 마지막이라는
+		--> 뜻이므로 forTokens가 마지막이 아닐때까지만 / 로 구분해주는 
+		--> 코드이다. 
+	</c:forTokens>
+	</td>
+</tr>
+
+--------------------- JSTL : format 태그로 날짜 형식 변경하기
+
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+맨위에 태그로 다른것을 써도되지만 fmt 를 쓰고
+uri 는 꼭 http://java.sun.com/jsp/jstl/fmt 와 같이 JSP가 있는 주소를 써야한다.
+
+<tr>
+	<th>작성일</th>
+	<td class="text-align-left text-indent" colspan="3">
+	<fmt:formatDate pattern="yyyy-MM-dd hh:mm:ss" value="${n.regdate}"/>
+	--> formatDate를 써서 pattern을 정해주고 어떤값을 pattern에 맞게
+	--> 출력할건지 그에대한 값 value 도 정해준다.
+	--> 위는 지금 예를들면 2021-04-26 20:58:40 처럼나온다.
+	</td>
+</tr>
+
+<td><fmt:formatDate pattern="yyyy-MM-dd" value="${n.regdate}"/></td>
+--> 위는 지금 2021-04-26 만 출력된다.
+
+---------------- 숫자 출력 형식 지정하기 JSTL : formatNumber
+
+****************	https://www.javatpoint.com/ 	**************
+--> JSTL 표식 방법들 공부할수 있는곳!!!
+
+<th>조회수</th>
+<td><fmt:formatNumber type="number" pattern="#,####원" value="${n.hit}"/> </td>
+--> 숫자를 4자리씩 끊어서 하겠다. value ${n.hit} -> 데이터베이스에 hit 에대한 값을
+
+---------------- JSTL : functions로 EL 에서 함수 이용하기 ---------------------
+
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+--> JSTL functions 을 쓰기위한 prefix 와 uri 를 설정한다.
+
+<a href="${fileName}" style="${style}">${fn:toUpperCase(fileName)}</a>
+--> fn:toUpperCase ===> fileName들을 다 대문자로 바꾸겟다
+
+<c:set var="style" value =""/> 
+--> style 변수를 초기화한다. (default 값을 정해둔다.)
+<c:if test="${fn:endsWith(fileName,'.zip')}"> 
+--> endsWith()함수를 써서 파일이름마지막에 .zip으로 끝나면 
+	<c:set var="style" value="font-weight: bold; color:red;"/>
+	--> 스타일을 진한 빨강색으로 바꾸겟다.
+</c:if>
