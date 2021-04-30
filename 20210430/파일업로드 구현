@@ -1,0 +1,201 @@
+
+----------------------------- 2021 04 30 --------------------------------------
+
+------------ 파일 업로드를 위한 인코딩 방식 multipart/form-data
+
+
+admin 에서의 reg.jsp 에서 form태그에
+기본값으로 enctype="application/x-www-form-urlencoded" 이 심어져있다.
+
+근데 인코딩 방식을 바꾸면 글등록이안된다.
+
+이를 방지하기위해서 파일 업로드를 위한 서블릿 설정을 해줘야한다.
+
+설정 방법 -----------------
+
+enctype="multipart/form-data"
+일단 jsp 에서 파일 첨부하는 form 에서 위와 같이 entype을 넣어준다.
+
+1. web.xml 에 설정하기
+
+< multipart-config >
+	<location>/tmp</location>
+	<max-file-size>20848820</max-file-size>
+	<max-request-size>418018841</max-request-size>
+	<file-size-threshold>1048576</file-size-threshold>
+</multipart-config>
+
+2. annotation 으로 설정하기 // annotiation 을 주로 쓴다.
+
+@MultipartConfig(
+	location="/tmp", (mutipartConfig  에서 location="/tmp" ) 지우고 하는게 좋다.
+	// 절대 경로를 써야한다 
+	// fileSizeThreshold 가 초과되면 디스크를 쓸수잇게 해주는 그런녀석인데
+	// 기본값은 "" 이다.
+	// 따라서 설정 안해주는게 좋다!!! 
+	fileSizeThreshold=1024*1024, 
+	// 1024*1024(byte) = 1MByte 전송하는 데이타가 1Mbyte넘어가면 디스크를쓰자 
+	maxFileSize=1024*1024*5,
+	// 파일이 굉장히 많이 보내지게 되면은 전체 네트워크를 통해서 받는
+	// 데이터가 굉장히 큰사이즈를 가진다.
+	// 서버쪾에서는 그 파일을 많이 받는거는 부담이된다.
+	// 무제한으로 보냈다는 원하지않게 디도스공격비슷하게 서버가 마비될수도있다.
+	// maxFileSize 는 하나의 파일 사이즈이다.
+	// 하나의 파일 사이즈의 맥시멈이 얼마가 될것이냐
+	// 즉 위는 파일 하나의최대크기는 5Mbyte로 해놓는것이다.
+	maxRequestSize=1024*1024*5*5)
+	// 전체요청횟수는 25Mbyte를 넘을수없다.
+	// 즉 각각의 파일들은 5Mb를 넘을수 없으면 한번에 보낼수있는
+	// 전체용ㅇ량은 25Mb를 넘을수 없다.
+
+[ maxfilesize, maxrequestsize 넘작아서 1024*1024*50, 1024*1024*50*5 로 바꿔준다 ]
+
+jsp 파일에서 multipart 를 해줫으니 백단에서 Controller도 multipart를 해줘야한다!
+
+
+------- 파일저장을 위한 물리 경로 얻기 서버가 받을려면 설정을 해야한다
+-------- 클라이언트가 보낸 내용을 서버쪾에서 받을수 잇다.
+--------- 클라이언트가 보낸 내용을 저장하기위해서 저장경로를 어덯게 해야할까?
+
+	Part filePart = request.getPart("file");
+		String fileName = filePart.getSubmittedFileName();
+		// getPart는 jsp name값을 받아서
+		// Part라는 자료형으로 변수화할수있다.
+		InputStream fis = filePart.getInputStream();
+		// 인터페이스 inputstream사용
+		// 파일 저장하는방법
+		
+//		fis. 은 system.in 과 비슷하다
+//		int b = fis.read();
+		// fis의 바이트 단위로 읽어라하면 read()를 쓰면된다.
+		// 근데 재밋는건 반환하는타입이 byte가 아니라 정수형이라는것이다!
+		// 다읽으면 -1 으로 반환한다. 
+		// 만약 바이트만 쓰고싶으면 바이트로 형변환해서 써도된다.
+		
+		// "/upload/" -> 여기다 저장하고싶은데 저장경로를 상대경로로쓸수없다.
+		// 이 경로를 실제경로에 바꿔줄수잇는 방법이 있어야한다.
+		// while을 써서  -1 일때까지 해야한다.
+		
+		String realPath = request.getServletContext().getRealPath("/upload");
+		// 					현재 웹루트를 통한 상대경로를넘겨주면 개는 시스템에있는
+//							실제 물리경로를 얻어주는 함수가있따.4
+		//					이것을 String 으로 해서 realPath에 저장한다.
+		String filePath = realPath + File.separator + fileName;
+		// File.separator 현재 시스템이 갖고있는 경로구분방법을 제공해준다.
+		FileOutputStream fos = new FileOutputStream(filePath);
+		
+		
+//		int b;		// 1바이트 씩 쓰기 즉 작은 수푼으로 큰양동이의 물을 옮겨라 급
+//		while((b = fis.read()) != -1) 
+//			fos.write(b);
+		
+		byte[]  buf = new byte[1024];
+		int size = 0;
+		while((size=  fis.read(buf)) != -1)  
+			fos.write(buf, 0, size); //-> 0부터 size의 갯수만큼 만 읽어라! 
+		// 읽어온개 320개다 ! 그럼 320개가 되는거고 size는 
+		// 더이상 읽어온게 없다 그러면 -1 이되는거다.
+		// 그냥 fos.writer(buf) 쓸데없는데까지 읽어서
+		// fos.writer(buf, 0 ,size) 와 속도 차이가 많이난다.
+		fos.close();
+		fis.close();
+		
+		System.out.println(realPath);
+		// 실제 경로는 다음과같다.
+		// C:\Users\rlaeh\jsp\workspace\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps\JSPPrj\ upload
+
+
+----- 다중 파일 업로드
+
+		Collection<Part> parts = request.getParts();
+		StringBuilder builder = new StringBuilder();
+		for(Part p : parts) {
+			if(!p.getName().equals("file")) continue;
+			if(p.getSize() == 0) continue;
+			
+			Part filePart = p;
+			String fileName = filePart.getSubmittedFileName();
+			builder.append(fileName);
+			
+			builder.append(",");
+			// getPart는 jsp name값을 받아서
+			// Part라는 자료형으로 변수화할수있다.
+			InputStream fis = filePart.getInputStream();
+			// 인터페이스 inputstream사용
+			// 파일 저장하는방법
+			
+	//		fis. 은 system.in 과 비슷하다
+	//		int b = fis.read();
+			// fis의 바이트 단위로 읽어라하면 read()를 쓰면된다.
+			// 근데 재밋는건 반환하는타입이 byte가 아니라 정수형이라는것이다!
+			// 다읽으면 -1 으로 반환한다. 
+			// 만약 바이트만 쓰고싶으면 바이트로 형변환해서 써도된다.
+			
+			// "/upload/" -> 여기다 저장하고싶은데 저장경로를 상대경로로쓸수없다.
+			// 이 경로를 실제경로에 바꿔줄수잇는 방법이 있어야한다.
+			// while을 써서  -1 일때까지 해야한다.
+			
+			String realPath = request.getServletContext().getRealPath("/upload");
+			System.out.println(realPath);
+			// 					현재 웹루트를 통한 상대경로를넘겨주면 개는 시스템에있는
+	//							실제 물리경로를 얻어주는 함수가있따.4
+			//					이것을 String 으로 해서 realPath에 저장한다.
+			
+			File path = new File(realPath);
+			// 	"/upload"라는 디렉토리가 실제 물리적으로 얻어젔을때 그 물리적인 경로에 얘가 있느냐 를 알아볼
+			// 수록 잇게 하는 기능이 포함되있따.
+			if(!path.exists())
+				// 만약 경로에 파일이 없다면 파일을 만들어줘라
+				path.mkdirs();
+			
+			String filePath = realPath + File.separator + fileName;
+			// File.separator 현재 시스템이 갖고있는 경로구분방법을 제공해준다.
+			FileOutputStream fos = new FileOutputStream(filePath);
+			
+			
+	//		int b;		// 1바이트 씩 쓰기 즉 작은 수푼으로 큰양동이의 물을 옮겨라 급
+	//		while((b = fis.read()) != -1) 
+	//			fos.write(b);
+			
+			byte[]  buf = new byte[1024];
+			int size = 0;
+			while((size=  fis.read(buf)) != -1)  
+				fos.write(buf, 0, size); //-> 0부터 size의 갯수만큼 만 읽어라! 
+			// 읽어온개 320개다 ! 그럼 320개가 되는거고 size는 
+			// 더이상 읽어온게 없다 그러면 -1 이되는거다.
+			// 그냥 fos.writer(buf) 쓸데없는데까지 읽어서
+			// fos.writer(buf, 0 ,size) 와 속도 차이가 많이난다.
+			fos.close();
+			fis.close();
+			
+		}
+		
+		builder.delete(builder.length()-1, builder.length());
+		// 실제 경로는 다음과같다.
+		// C:\Users\rlaeh\jsp\workspace\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps\JSPPrj\ upload
+
+		boolean pub = false;
+		if(isOpen != null)
+			pub = true;
+		
+		Notice notice = new Notice();
+		notice.setTitle(title);
+		notice.setContent(content);
+		notice.setPub(pub);
+		notice.setWriterId("newlec");
+		notice.setFiles(builder.toString());
+		
+		NoticeService service = new NoticeService();
+		int result = service.insertNotice(notice);
+		
+		response.sendRedirect("list");
+		
+	}
+}
+
+[ detail.jsp <관리자 쪾 > ]
+
+<a download href="/upload/${fileName}" style="${style}">${fn:toUpperCase(fileName)}</a>
+
+옛날에는  클릭하면 download 하는게 백단에서 구현도했어야했는데 지금은 좋아져서
+html 에 저렇게 download만 하면 download가 되게 됬다.
