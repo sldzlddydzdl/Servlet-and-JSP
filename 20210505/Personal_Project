@@ -1,0 +1,175 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+
+<body>
+<form method="post" id="authForm" action="">
+    <input type="hidden" name="redirectUrl" value="">
+    <fieldset>
+      <legend class="screen_out">로그인 정보 입력폼</legend>
+      <div class="box_login">
+        <div class="inp_text">
+          <label for="loginId" class="screen_out">아이디</label>
+          <input type="text" id="loginId" name="loginId" placeholder="ID" >
+        </div>
+        <div class="inp_text">
+          <label for="loginPw" class="screen_out">비밀번호</label>
+          <input type="password" id="loginPw" name="password" placeholder="Password" >
+        </div>
+      </div>
+      <button type="submit" class="btn_login" >로그인</button>
+      <div class="login_append">
+        <div class="inp_chk"> <!-- 체크시 checked 추가 -->
+          <input type="checkbox" id="keepLogin" class="inp_radio"  name="keepLogin">
+          <label for="keepLogin" class="lab_g">
+<span class="img_top ico_check"></span>
+<span class="txt_lab">로그인 상태 유지</span>
+  </label>
+        </div>
+        <span class="txt_find">
+           <a href="/member/find/loginId" class="link_find">아이디</a>
+            / 
+           <a href="/member/find/password" class="link_find">비밀번호 찾기</a>
+           /
+           <a href="/signup" class ="link_craete">회원가입</a>
+         </span>
+      </div>
+      
+    </fieldset>
+  </form>
+  
+  
+  
+  <%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<form method="post" action="signup">
+
+	<div>
+		<label>아이디</label>
+		<input type="text" id="loginId"name="loginId">
+	</div>
+	<div>
+		<label>비밀번호</label>
+		<input type="password"id="password" name="password">
+	</div>
+	<div>
+		<label>이름</label>
+		<input type="text" id="Name" name="Name">
+	</div>
+		<button type="submit">ㅎㅇ</button>	
+		</form>
+</body>
+</html>
+
+
+package com.personalproject.web.controller;
+
+import java.io.IOException;
+
+import com.personalproject.web.entity.Member;
+import com.personalproject.web.service.WebService;
+
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+@WebServlet("/signup")
+public class SignUpController extends HttpServlet{
+	@Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	
+//		String id = "";
+//		String Password= "";
+//		String Name = "";
+		
+		String id = (String)request.getParameter("loginId");
+		String Password = (String)request.getParameter("password");
+		String Name = (String)request.getParameter("Name");
+		
+//		String id = "qwe";
+//		String Password = "qwe";
+//		String Name = "qwe";
+	
+	
+//			
+		System.out.println(id);
+		System.out.println(Password);
+		System.out.println(Name);
+		WebService service = new WebService();
+		service.setMember(id, Password, Name);
+		
+		RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/viewPersonal/SignUp/signUp.jsp");
+		dispatcher.forward(request, response);
+		
+	}
+	
+	
+}
+
+
+
+package com.personalproject.web.service;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Date;
+
+import com.newlecture.web.entity.Notice;
+import com.personalproject.web.entity.Member;
+
+public class WebService {
+	
+	public Member setMember(String Id, String Password , String Name) {
+	Member member = null;
+	
+	String sql = "INSERT INTO projectmember (id, pwd, name) VALUES ( ?, ?, ? )";
+	
+	String url = "jdbc:oracle:thin:@localhost:1521/xepdb1";		
+	
+	try {
+		Class.forName("oracle.jdbc.driver.OracleDriver");
+		Connection con = DriverManager.getConnection(url,"NEWLEC","0297");
+		PreparedStatement st = con.prepareStatement(sql);
+		st.setString(1, Id);
+		st.setString(2, Password);
+		st.setString(3, Name);
+		
+		ResultSet rs = st.executeQuery();
+		
+		member = new Member(Id, Password, Name);
+
+		rs.close();
+		st.close();
+		con.close();
+	} catch (ClassNotFoundException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (SQLException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	
+	return member;
+	}
+}
+
