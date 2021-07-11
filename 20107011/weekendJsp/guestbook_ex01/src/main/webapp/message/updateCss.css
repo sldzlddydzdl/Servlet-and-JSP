@@ -1,0 +1,8 @@
+@charset "UTF-8";
+form {
+	border : 10px solid #000;
+	padding : 5px;
+}
+p{
+	background-color: aqua;
+}
