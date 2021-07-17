@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd" version="4.0">
+  <display-name>guestbook_mvc_ex02</display-name>
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+  <!-- 서블릿 등록 -->
+  <!-- 서블릿은 요청을 받아주는 역할을 하는 객체다 어떤 요청에 어떤 객체를 실행할지 등록 연결을 해줘야한다 -->
+  
+  <servlet>
+  	<servlet-name>guestbookCtr</servlet-name>
+  	<servlet-class>guestnook.controller.GuestbookController</servlet-class>
+  </servlet>
+  
+  <!-- 서블릿 맵핑 -->
+  <servlet-mapping>
+  	<servlet-name>guestbookCtr</servlet-name>
+  	<url-pattern>/list</url-pattern>
+  </servlet-mapping>
+</web-app>
